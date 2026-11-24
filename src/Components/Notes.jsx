@@ -16,27 +16,17 @@ const startingNotes = [
 
 function Notes() {
   const [notes, setNotes] = useState(() => {
-    try {
-      const saved = localStorage.getItem('notes')
-      return saved ? JSON.parse(saved) : startingNotes
-    } catch {
-      return startingNotes
-    }
+  const saved = localStorage.getItem('notes')
+  return saved ? JSON.parse(saved) : startingNotes
   })
 
   const [form, setForm] = useState(() => {
-    try {
-      const savedDraft = localStorage.getItem('draft')
-      return savedDraft
-        ? JSON.parse(savedDraft)
-        : { title: '', body: '' }
-    } catch {
-      return { title: '', body: '' }
-    }
+    const saved = localStorage.getItem('draft')
+    return saved ? JSON.parse(saved) : { title: '', body: '' }
   })
 
-  const [search, setSearch] = useState('')
-  const titleRef = useRef(null)
+    const [search, setSearch] = useState('')
+    const titleRef = useRef(null)
 
   // Save notes to localStorage
   useEffect(() => {
