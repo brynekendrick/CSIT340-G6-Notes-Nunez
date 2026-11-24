@@ -1,42 +1,51 @@
-
 import { useState, useEffect } from 'react'
 import NoteCard from './NoteCard.jsx'
 
-function Notes() {
-  const [notes, setNotes] = useState([
-    {
-      id: 1,
-      title: 'Review map and filter',
-      body: 'Redo the TodoMVC steps without looking at the guide.',
-    },
-    {
-      id: 2,
-      title: 'Prepare for the quiz',
-      body: 'Practice writing one handler for many inputs.',
-    },
-  ])
+const startingNotes = [
+  {
+    id: 1,
+    title: 'Review map and filter',
+    body: 'Redo the TodoMVC steps without looking at the guide.',
+  },
+  {
+    id: 2,
+    title: 'Prepare for the quiz',
+    body: 'Practice writing one handler for many inputs.',
+  },
+]
 
-  const [form, setForm] = useState({
-    title: '',
-    body: '',
+function Notes() {
+  const [notes, setNotes] = useState(() => {
+    const saved = localStorage.getItem('notes')
+    return saved ? JSON.parse(saved) : startingNotes
   })
 
+  const [form, setForm] = useState({ title: '', body: '' })
   const [search, setSearch] = useState('')
-  if(search){
-    useState
+
+  useEffect(() => {
+    localStorage.setItem('notes', JSON.stringify(notes))
+  }, [notes])
+
+  useEffect(() => {
+  localStorage.setItem('notes', JSON.stringify(notes))
+}, [notes])
+
+  useEffect(() => {
+  const id = setTimeout(() => {
+    localStorage.setItem('draft', JSON.stringify(form))
+  }, 1000)
+
+  return () => clearTimeout(id)
+}, [form])
+
+  function handleChange(e) {
+    const { name, value } = e.target
+    setForm({ ...form, [name]: value })
   }
 
-  function handleChange(event) {
-    const { name, value } = event.target
-
-    setForm((previous) => ({
-      ...previous,
-      [name]: value,
-    }))
-  }
-
-  function handleSubmit(event) {
-    event.preventDefault()
+  function handleSubmit(e) {
+    e.preventDefault()
 
     const title = form.title.trim()
     const body = form.body.trim()
@@ -45,82 +54,90 @@ function Notes() {
       return
     }
 
-    const newNote = {
-      id: Date.now(),
-      title: title,
-      body: body,
-    }
+    setNotes([
+      ...notes,
+      {
+        id: Date.now(),
+        title,
+        body,
+      },
+    ])
 
-    setNotes((previous) => [...previous, newNote])
-
-    setForm({
-      title: '',
-      body: '',
-    })
+    setForm({ title: '', body: '' })
   }
 
   function handleDelete(id) {
-    setNotes((previous) =>
-      previous.filter((note) => note.id !== id)
-    )
+    setNotes(notes.filter((note) => note.id !== id))
   }
 
-  const filteredNotes = notes.filter((note) =>
+  const visibleNotes = notes.filter((note) =>
     note.title.toLowerCase().includes(search.toLowerCase())
   )
 
   return (
-    <div className="grid min-h-screen grid-cols-[420px_1fr]">
-      <aside className="sticky top-0 flex h-screen flex-col gap-5 bg-white px-8 py-9 shadow-[0_2px_4px_0_rgba(0,0,0,0.2),0_25px_50px_0_rgba(0,0,0,0.1)]">
-        <h1 className="text-[72px] leading-none font-extralight text-[#b83f45]">
-          notes
-        </h1>
+    <main className="mx-auto min-h-screen max-w-3xl px-6 py-16">
+      <div className="mb-10">
+        <h1 className="text-[42px] font-normal tracking-tight">Notes</h1>
+        <p className="mt-2 text-[16px] text-[#949494]">
+          Keep track of what you need to remember.
+        </p>
+      </div>
 
-        <div>
-          <p className="mb-2 text-[13px] font-normal tracking-wide text-[#949494]">SEARCH</p>
+      <form onSubmit={handleSubmit} className="mb-10">
+        <div className="mb-4">
+          <label className="mb-2 block text-[13px] font-normal tracking-wide text-[#949494]">
+            NEW NOTE
+          </label>
+
           <input
-            placeholder="Search by title"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            className="h-[52px] w-full border border-[#e6e6e6] px-4 text-lg outline-none placeholder:text-black/40 placeholder:italic focus:border-[#cf7d7d]"
+            name="title"
+            value={form.title}
+            onChange={handleChange}
+            placeholder="Title"
+            className="w-full border-b border-[#d6d6d6] bg-transparent py-2 text-[22px] font-normal outline-none placeholder:text-[#b8b8b8]"
           />
         </div>
 
-        <form className="grid gap-3" onSubmit={handleSubmit}>
-          <p className="text-[13px] font-normal tracking-wide text-[#949494]">NEW NOTE</p>
-          <input
-            name="title"
-            placeholder="Title"
-            value={form.title}
-            onChange={handleChange}
-            className="h-[52px] w-full border border-[#e6e6e6] px-4 text-lg outline-none placeholder:text-black/40 placeholder:italic focus:border-[#cf7d7d]"
-          />
-          <textarea
-            name="body"
-            placeholder="Write your note"
-            value={form.body}
-            onChange={handleChange}
-            className="h-[120px] w-full resize-none py-3 border border-[#e6e6e6] px-4 text-lg outline-none placeholder:text-black/40 placeholder:italic focus:border-[#cf7d7d]"
-          />
-          <button
-            type="submit"
-            className="h-[50px] cursor-pointer bg-[#b83f45] text-[17px] font-normal text-white hover:bg-[#a33439]"
-          >
-            Add note
-          </button>
-        </form>
-      </aside>
+        <textarea
+          name="body"
+          value={form.body}
+          onChange={handleChange}
+          placeholder="Write your note..."
+          rows="3"
+          className="w-full resize-none border-b border-[#d6d6d6] bg-transparent py-2 text-[17px] font-normal outline-none placeholder:text-[#b8b8b8]"
+        />
 
-      <section className="px-12 py-11">
-        <h2 className="mb-6 text-3xl">All notes</h2>
+        <button
+          type="submit"
+          className="mt-5 cursor-pointer bg-[#b83f45] px-5 py-2 text-[15px] text-white"
+        >
+          Add note
+        </button>
+      </form>
 
-        <ul className="grid grid-cols-3 items-start gap-5">
-          {filteredNotes.map((note) => (
+      <div className="mb-8">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search notes..."
+          className="w-full border-b border-[#d6d6d6] bg-transparent py-2 text-[17px] outline-none placeholder:text-[#b8b8b8]"
+        />
+      </div>
+
+      {visibleNotes.length === 0 ? (
+        <p className="text-[17px] text-[#949494]">No notes found.</p>
+      ) : (
+        <ul className="space-y-5">
+          {visibleNotes.map((note) => (
             <li
               key={note.id}
               className="relative min-h-32 bg-white px-6 py-5 shadow-[0_2px_4px_0_rgba(0,0,0,0.2),0_25px_50px_0_rgba(0,0,0,0.1)]"
             >
-              <NoteCard title={note.title} body={note.body} />
+              <NoteCard
+                title={note.title}
+                body={note.body}
+              />
+
               <button
                 type="button"
                 onClick={() => handleDelete(note.id)}
@@ -131,13 +148,9 @@ function Notes() {
             </li>
           ))}
         </ul>
-
-        {filteredNotes.length === 0 && (
-          <p className="text-lg text-[#949494]">No notes found</p>
-        )}
-      </section>
-    </div>
+      )}
+    </main>
   )
 }
 
-export default Notes
+export default Notes  
