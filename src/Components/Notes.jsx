@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import NoteCard from './NoteCard.jsx'
 
 const startingNotes = [
@@ -91,9 +91,11 @@ function Notes() {
     )
   }
 
-  const visibleNotes = notes.filter((note) =>
+  const visibleNotes = useMemo(() => {
+  return notes.filter((note) =>
     note.title.toLowerCase().includes(search.toLowerCase())
   )
+  }, [notes, search])
 
   return (
     <main className="mx-auto min-h-screen max-w-3xl px-6 py-16">
