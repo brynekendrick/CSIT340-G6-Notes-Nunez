@@ -16,33 +16,49 @@ const startingNotes = [
 
 function Notes() {
   const [notes, setNotes] = useState(() => {
-    const saved = localStorage.getItem('notes')
-    return saved ? JSON.parse(saved) : startingNotes
+    try {
+      const saved = localStorage.getItem('notes')
+      return saved ? JSON.parse(saved) : startingNotes
+    } catch {
+      return startingNotes
+    }
   })
 
-  const [form, setForm] = useState({ title: '', body: '' })
+  const [form, setForm] = useState(() => {
+    try {
+      const savedDraft = localStorage.getItem('draft')
+      return savedDraft
+        ? JSON.parse(savedDraft)
+        : { title: '', body: '' }
+    } catch {
+      return { title: '', body: '' }
+    }
+  })
+
   const [search, setSearch] = useState('')
   const titleRef = useRef(null)
 
+  // Save notes to localStorage
   useEffect(() => {
     localStorage.setItem('notes', JSON.stringify(notes))
   }, [notes])
 
+  // Save draft after 1 second
   useEffect(() => {
-  localStorage.setItem('notes', JSON.stringify(notes))
-}, [notes])
+    const id = setTimeout(() => {
+      localStorage.setItem('draft', JSON.stringify(form))
+    }, 1000)
 
-  useEffect(() => {
-  const id = setTimeout(() => {
-    localStorage.setItem('draft', JSON.stringify(form))
-  }, 1000)
-
-  return () => clearTimeout(id)
-}, [form])
+    return () => clearTimeout(id)
+  }, [form])
 
   function handleChange(e) {
     const { name, value } = e.target
-    setForm({ ...form, [name]: value })
+
+    setForm((prevForm) => ({
+      ...prevForm,
+      [name]: value,
+    }))
   }
 
   function handleSubmit(e) {
@@ -55,8 +71,8 @@ function Notes() {
       return
     }
 
-    setNotes([
-      ...notes,
+    setNotes((prevNotes) => [
+      ...prevNotes,
       {
         id: Date.now(),
         title,
@@ -65,11 +81,14 @@ function Notes() {
     ])
 
     setForm({ title: '', body: '' })
-    titleRef.current.focus()
+    localStorage.removeItem('draft')
+    titleRef.current?.focus()
   }
 
   function handleDelete(id) {
-    setNotes(notes.filter((note) => note.id !== id))
+    setNotes((prevNotes) =>
+      prevNotes.filter((note) => note.id !== id)
+    )
   }
 
   const visibleNotes = notes.filter((note) =>
@@ -79,7 +98,10 @@ function Notes() {
   return (
     <main className="mx-auto min-h-screen max-w-3xl px-6 py-16">
       <div className="mb-10">
-        <h1 className="text-[42px] font-normal tracking-tight">Notes</h1>
+        <h1 className="text-[42px] font-normal tracking-tight">
+          Notes
+        </h1>
+
         <p className="mt-2 text-[16px] text-[#949494]">
           Keep track of what you need to remember.
         </p>
@@ -97,6 +119,7 @@ function Notes() {
             value={form.title}
             onChange={handleChange}
             placeholder="Title"
+            required
             className="w-full border-b border-[#d6d6d6] bg-transparent py-2 text-[22px] font-normal outline-none placeholder:text-[#b8b8b8]"
           />
         </div>
@@ -107,6 +130,7 @@ function Notes() {
           onChange={handleChange}
           placeholder="Write your note..."
           rows="3"
+          required
           className="w-full resize-none border-b border-[#d6d6d6] bg-transparent py-2 text-[17px] font-normal outline-none placeholder:text-[#b8b8b8]"
         />
 
@@ -128,7 +152,9 @@ function Notes() {
       </div>
 
       {visibleNotes.length === 0 ? (
-        <p className="text-[17px] text-[#949494]">No notes found.</p>
+        <p className="text-[17px] text-[#949494]">
+          No notes found.
+        </p>
       ) : (
         <ul className="space-y-5">
           {visibleNotes.map((note) => (
@@ -156,4 +182,4 @@ function Notes() {
   )
 }
 
-export default Notes  
+export default Notes
